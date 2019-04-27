@@ -1,0 +1,197 @@
+import java.util.*;
+
+/**
+ * @author Baudouin KOUASSI
+ *
+ */
+public class Competition {
+
+	/**
+	 * Numéro de la competition autoincrémenté à chaque instanciation d'un objet
+	 * Competition
+	 */
+	public static int idCompetition = 0;
+
+	/**
+	 * Nom de la competition
+	 */
+	private String nom;
+
+	/**
+	 * La liste des compétiteurs participant à une compétition donnée
+	 */
+	private LinkedList<Competiteur> listeCompetiteurs;
+
+	/**
+	 * Liste contenant le ou les vainqueurs de la compétitions
+	 */
+	private Competiteur vainqueur;
+
+	/**
+	 * Liste contenant les paris de la competition
+	 */
+	private LinkedList<Pari> listeParisCompetition;
+
+	/**
+	 * la date de cloture des inscriptions à la compétition
+	 */
+	private DateFrancaise dateCloture;
+
+	// CONSTRUCTEURS
+
+	/**
+	 * contructeur avec paramètre
+	 */
+	public Competition(DateFrancaise date, String nom) {
+		idCompetition++;
+		setId(idCompetition);
+		setDate(date);
+		setNom(nom);
+		listeParisCompetition = new LinkedList<>();
+	}
+
+	/**
+	 * contructeur par défaut
+	 */
+	public Competition() {
+		idCompetition++;
+		setId(idCompetition);
+		listeParisCompetition = new LinkedList<>();
+	}
+
+	// SETTERS ET GETTERS
+
+	/**
+	 * Getter de l'attribut idCompetition
+	 * 
+	 * @return retourne le numero de la Competition
+	 */
+	public int getId() {
+		return idCompetition;
+	}
+
+	/**
+	 * Setter de l'attribut idCompetition
+	 * 
+	 * @param le numero de la Competition
+	 */
+	public void setId(int idCompet) {
+		idCompetition = idCompet;
+	}
+
+	/**
+	 * Getter de l'attribut nom
+	 * 
+	 * @return retourne le nom de la Competition
+	 */
+	public String getNom() {
+		return nom;
+	}
+
+	/**
+	 * Setter de l'attribut nom
+	 * 
+	 * @param nom (nom de la Competition)
+	 */
+	public void setNom(String nom) {
+		this.nom = nom;
+	}
+
+	/**
+	 * Getter de la liste des competiteurs
+	 * 
+	 * @return Retourne la liste des compétiteurs participant à la compétition.
+	 */
+	public LinkedList<Competiteur> getCompetiteurs() {
+		return listeCompetiteurs;
+	}
+
+	/**
+	 * Setter de la liste des competiteurs
+	 * 
+	 * @param competiteurs (la liste des compétiteurs)
+	 */
+	public void setCompetiteurs(LinkedList<Competiteur> listeCompetiteurs) {
+		this.listeCompetiteurs = listeCompetiteurs;
+	}
+
+	/**
+	 * Getter de la liste des paris
+	 * 
+	 * @return Retourne la liste des compétiteurs participant à la compétition.
+	 */
+	public LinkedList<Pari> getParis() {
+		return listeParisCompetition;
+	}
+
+	/**
+	 * Setter de la liste des competiteurs
+	 * 
+	 * @param competiteurs (la liste des compétiteurs)
+	 */
+	public void setParis(LinkedList<Pari> listePari) {
+		listeParisCompetition = listePari;
+	}
+
+	/**
+	 * Getter de la date
+	 * 
+	 * @return Returns la date.
+	 */
+	public DateFrancaise getDate() {
+		return dateCloture;
+	}
+
+	/**
+	 * Setter de la date
+	 * 
+	 * @param date la date de cloture
+	 */
+	public void setDate(DateFrancaise date) {
+		dateCloture = date;
+	}
+
+	/**
+	 * Getter de l'attribut ListeVainqueur
+	 * 
+	 * @return Retourne une liste contenant le ou les vainqueurs de la compétition
+	 */
+	public Competiteur getVainqueur() {
+		return vainqueur;
+	}
+
+	/**
+	 * Setter de la liste des vainqueurs
+	 * 
+	 * @param listeVainqueur
+	 */
+	public void setVainqueur(Competiteur vainqueur) {
+		this.vainqueur = vainqueur;
+	}
+
+	/**
+	 * methode calculant la mise totale sur la competition 
+	 * 
+	 * @param competiteur Le nom du compétiteur
+	 */
+	public long getTotalMise() {
+		long miseTotale = 0;
+		for (Pari p : this.getParis())
+			miseTotale += p.getMise();
+		return miseTotale;
+	}
+
+	/**
+	 * methode calculant la mise totale sur le vainqueur de la competition
+	 * 
+	 * @param vainqueur Le nom du vainqueur de la competition
+	 */
+	public long getTotalMise(String vainqueur) {
+		long miseTotaleSurVainqueur = 0;
+		for (Pari p : getParis())
+			if (p.getVainqueurEnvisage().getNom().equals(vainqueur))
+				miseTotaleSurVainqueur += p.getMise();
+		return miseTotaleSurVainqueur;
+	}
+
+}

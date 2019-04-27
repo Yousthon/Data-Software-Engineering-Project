@@ -1,0 +1,889 @@
+import java.util.LinkedList;
+import java.util.Collection;
+import java.util.Random; //Pour la génération des mots de passe
+import java.util.stream.Collectors;
+
+/**
+ * 
+ * @author KOUASSI Baudouin et YASSER <br>
+ *         <br>
+ *         La classe qui contient toutes les méthodes "Metiers" de la gestion du
+ *         site de paris. <br>
+ *         <br>
+ *         Dans toutes les méthodes :
+ *         <ul>
+ *         <li>un paramètre de type <code>String</code> est invalide s'il n'est
+ *         pas instancié.</li>
+ *         <li>pour la validité d'un password de gestionnaire et d'un password
+ *         de joueur :
+ *         <ul>
+ *         <li>on autorise que les lettres et chiffres</li>
+ *         <li>le mot de passe doit avoir une longueur d'au moins 8 caractères
+ *         </li>
+ *         </ul>
+ *         </li>
+ *         <li>pour la validité d'un pseudo de joueur :
+ *         <ul>
+ *         <li>On autorise que les lettres et chiffres</li>
+ *         <li>le mot de passe doit avoir une longueur d'au moins 4
+ *         caractères</li>
+ *         </ul>
+ *         </li>
+ *         <li>pour la validité d'un prénom de joueur et d'un nom de joueur :
+ *         <ul>
+ *         <li>lettres et tiret sont les seuls caractères autorisés</li>
+ *         <li>le mot de passe doit avoir une longueur d'au moins 1 caractère
+ *         </li>
+ *         </ul>
+ *         </li>
+ *         <li>pour la validité d'une compétition :
+ *         <ul>
+ *         <li>lettres, chiffres, point, trait d'union et souligné sont les
+ *         seuls caractères autorisés</li>
+ *         <li>elle doit avoir une longueur d'au moins 4 caractères</li>
+ *         </ul>
+ *         </li>
+ *         <li>pour la validité du nom d'un compétiteur :
+ *         <ul>
+ *         <li>lettres, chiffres, trait d'union et souligné sont les seuls
+ *         caractères autorisés</li>
+ *         <li>il doit avoir une longueur d'au moins 4 caractères.</li>
+ *         </ul>
+ *         </li>
+ *         </ul>
+ */
+
+public class SiteDeParisMetier {
+
+	/**
+	 * Mot de passe du gestionnaire du site de paris
+	 */
+	private String passwordGestionnaire;
+
+	/**
+	 * liste des joueurs inscrits
+	 */
+	private LinkedList<Joueur> listeJoueursInscrits;
+
+	/**
+	 * liste des competitions en cours
+	 */
+	private LinkedList<Competition> listeCompetitions;
+
+	/**
+	 * liste des Competiteurs
+	 */
+	private LinkedList<Competiteur> listeDesCompetiteurs;
+
+	// CONSTRUCTEURS
+
+	/**
+	 * constructeur de <code>SiteDeParisMetier</code>.
+	 * 
+	 * @param passwordGestionnaire le password du gestionnaire.
+	 * @throws MetierException levée si le <code>passwordGestionnaire</code> est
+	 *                         invalide
+	 */
+	public SiteDeParisMetier(String passwordGestionnaire) throws MetierException {
+		validitePasswordGestionnaire(passwordGestionnaire);
+		listeJoueursInscrits = new LinkedList<>();
+		listeDesCompetiteurs = new LinkedList<>();
+		listeCompetitions = new LinkedList<>();
+		this.passwordGestionnaire = passwordGestionnaire;
+	}
+
+	// METHODES NECESSITANT LE PASSWORD DU GESTIONNAIRE
+
+	/**
+	 * inscrire un joueur.
+	 * 
+	 * @param nom                  le nom du joueur
+	 * @param prenom               le prénom du joueur
+	 * @param pseudo               le pseudo du joueur
+	 * @param passwordGestionnaire le password du gestionnaire du site
+	 * 
+	 * @throws MetierException         levée si le <code>passwordGestionnaire</code>
+	 *                                 proposé est invalide, si le
+	 *                                 <code>passwordGestionnaire</code> est
+	 *                                 incorrect.
+	 * @throws JoueurExistantException levée si un joueur existe avec les mêmes noms
+	 *                                 et prénoms ou le même pseudo.
+	 * @throws JoueurException         levée si <code>nom</code>,
+	 *                                 <code>prenom</code>, <code>pseudo</code> sont
+	 *                                 invalides.
+	 * 
+	 * @return le mot de passe (déterminé par le site) du nouveau joueur inscrit.
+	 */
+	public String inscrireJoueur(String nom, String prenom, String pseudo, String passwordGestionnaire)
+			throws MetierException, JoueurExistantException, JoueurException {
+
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+		validitePseudo(pseudo);
+		validiteNomPrenom(nom);
+		validiteNomPrenom(prenom);
+
+		// On parcours la liste des joueurs pour voir si le joueur existe déjà
+		Joueur j1 = new Joueur(nom, prenom, pseudo, passwordGestionnaire);
+		for (Joueur j : listeJoueursInscrits) {
+			if (j != null && j.equals(j1)) {
+				throw new JoueurExistantException("Le joueur existe déjà");
+			}
+		}
+
+		// On génère le password du joueur et on l'ajoute à la liste
+		j1.setPasswordJoueur(genererPassword(8));
+		listeJoueursInscrits.add(j1);
+
+		return j1.getPasswordJoueur();
+	}
+
+	/**
+	 * supprimer un joueur.
+	 * 
+	 * @param nom                  le nom du joueur
+	 * @param prenom               le prenom du joueur
+	 * @param pseudo               le pseudo du joueur
+	 * @param passwordGestionnaire le password du gestionnaire du site
+	 * 
+	 * @throws MetierException           si le <code>passwordGestionnaire</code> est
+	 *                                   invalide, si le
+	 *                                   <code>passwordGestionnaire</code> est
+	 *                                   incorrect.
+	 * @throws JoueurInexistantException levée si il n'y a pas de joueur avec le
+	 *                                   même <code>nom</code>, <code>prenom</code>
+	 *                                   et <code>pseudo</code>.
+	 * @throws JoueurException           levée si le joueur a des paris en cours, si
+	 *                                   <code>nom</code>, <code>prenom</code>,
+	 *                                   <code>pseudo</code> sont invalides.
+	 * 
+	 * @return le nombre de jetons à  rembourser au joueur qui vient d'etre
+	 *         désinscrit.
+	 * 
+	 */
+	public long desinscrireJoueur(String nom, String prenom, String pseudo, String passwordGestionnaire)
+			throws MetierException, JoueurInexistantException, JoueurException {
+
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+		validitePseudo(pseudo);
+		validiteNomPrenom(nom);
+		validiteNomPrenom(prenom);
+
+		// recherche du joueur
+		Joueur j1 = rechercherJoueur(nom, prenom, pseudo);
+		if (j1 == null)
+			throw new JoueurInexistantException();
+
+		// On verifie si le joueur a des paris en cours
+		if (j1.getMesParis().size() > 0)
+			throw new JoueurException(" paris en cours !");
+
+		// Nombre de jetons à rembourser qu joeuur
+		long sommeArembouser = j1.getJetons();
+		listeJoueursInscrits.remove(j1);
+
+		return sommeArembouser;
+	}
+
+	/**
+	 * ajouter une competition.
+	 * 
+	 * @param competition          le nom de la competition
+	 * @param dateCloture          la date a  partir de laquelle il ne sera plus
+	 *                             possible de miser
+	 * @param competiteurs         les noms des differents competiteurs de la
+	 *                             competition
+	 * @param passwordGestionnaire le password du gestionnaire du site
+	 * 
+	 * @throws MetierException               levee si le tableau des compÃ©titeurs
+	 *                                       n'est pas instancie, si le
+	 *                                       <code>passwordGestionnaire</code> est
+	 *                                       invalide, si le
+	 *                                       <code>passwordGestionnaire</code> est
+	 *                                       incorrect.
+	 * @throws CompetitionExistanteException levee si une competition existe avec le
+	 *                                       meme nom.
+	 * @throws CompetitionException          levee si le nom de la competition ou
+	 *                                       des competiteurs sont invalides, si il
+	 *                                       y a moins de 2 competiteurs, si un des
+	 *                                       competiteurs n'est pas instancie, si
+	 *                                       deux competiteurs ont le mÃªme nom, si
+	 *                                       la date de cloture n'est pas instanciee
+	 *                                       ou est depassee.
+	 */
+	public void ajouterCompetition(String competition, DateFrancaise dateCloture, String[] listeCompetiteurs,
+			String passwordGestionnaire) throws MetierException, CompetitionExistanteException, CompetitionException {
+
+		// verification mot de passe
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+
+		// nom, date et liste de competitieurs valides
+		validiteCompetition(competition, listeCompetiteurs, dateCloture);
+
+		// verification que la compet existe pas de nom
+		competitionExistante(competition);
+
+		// creation de la liste des competiteurs
+		LinkedList<Competiteur> liste = new LinkedList<Competiteur>();
+
+		for (int i = 0; i < listeCompetiteurs.length; i++) {
+			// nom competiteur valide
+			validiteNomCompetOuJoueur(listeCompetiteurs[i]);
+			// verifier les competiteurs en doublure
+			competiteurExistant(listeCompetiteurs[i], i + 1, listeCompetiteurs);
+			liste.add(new Competiteur(listeCompetiteurs[i]));
+		}
+		// initialisation de la competition
+		Competition compet = new Competition(dateCloture, competition);
+
+		// ajout des competiteurs a la liste
+		compet.setCompetiteurs(liste);
+		listeCompetitions.add(compet);
+	}
+
+	/**
+	 * solder une competition vainqueur (compÃ©tition avec vainqueur).
+	 * 
+	 * Chaque joueur ayant misÃ© sur cette compÃ©tition en choisissant ce
+	 * compÃ©titeur est crÃ©ditÃ© d'un nombre de jetons Ã©gal Ã  :
+	 * 
+	 * (le montant de sa mise * la somme des jetons misÃ©s pour cette compÃ©tition)
+	 * / la somme des jetons misÃ©s sur ce compÃ©titeur.
+	 *
+	 * Si aucun joueur n'a trouvÃ© le bon compÃ©titeur, des jetons sont crÃ©ditÃ©s
+	 * aux joueurs ayant misÃ© sur cette compÃ©tition (conformÃ©ment au montant de
+	 * leurs mises). La compÃ©tition est "supprimÃ©e" si il ne reste plus de mises
+	 * suite Ã ce solde.
+	 * 
+	 * @param competition          le nom de la compÃ©tition
+	 * @param vainqueur            le nom du vainqueur de la compÃ©tition
+	 * @param passwordGestionnaire le password du gestionnaire du site
+	 * 
+	 * @throws MetierException                 levÃ©e si le
+	 *                                         <code>passwordGestionnaire</code> est
+	 *                                         invalide, si le
+	 *                                         <code>passwordGestionnaire</code> est
+	 *                                         incorrect.
+	 * @throws CompetitionInexistanteException levÃ©e si il n'existe pas de
+	 *                                         compÃ©tition de mÃªme nom.
+	 * @throws CompetitionException            levÃ©e si le nom de la compÃ©tition
+	 *                                         ou du vainqueur est invalide, si il
+	 *                                         n'existe pas de compÃ©titeur du nom
+	 *                                         du vainqueur dans la compÃ©tition, si
+	 *                                         la date de clÃ´ture de la
+	 *                                         compÃ©tition est dans le futur.
+	 * @throws JoueurException
+	 * @throws JoueurInexistantException
+	 * 
+	 */
+	public void solderVainqueur(String competition, String vainqueur, String passwordGestionnaire)
+			throws MetierException, CompetitionInexistanteException, CompetitionException, JoueurInexistantException,
+			JoueurException {
+
+		// verification mot de passe gestionnaire
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+
+		// EXCEPTION COMPETITIONS
+		validiteNomCompetOuJoueur(competition);
+		validiteNomCompetOuJoueur(vainqueur);
+		competitionInexistante(competition);
+
+		// On vérifie que la date est bien dans le passé
+		Competition compet = rechercherCompetition(competition);
+		if (!compet.getDate().estDansLePasse())
+			throw new CompetitionException();
+
+		// On vérifie que le vainqueur existe bien dans la compétition
+		if (!compet.existeDansCompetition(vainqueur))
+			throw new CompetitionException("le vainqueur est inconnu");
+
+		// Cas ou aucun joueur n'a trouvé le bon compétiteur
+		if (compet.getTotalMise(vainqueur) == 0) {
+			for (Pari p : compet.getParis()) {
+				crediterJoueur(p.getParieur().getNom(), p.getParieur().getPrenom(), p.getParieur().getPseudo(),
+						p.getMise(), passwordGestionnaire);
+
+				// On supprime le pari de la liste des paris du joueur courant
+				p.getParieur().getMesParis().remove(p);
+			}
+			// On supprime tous les paris de la compétition soldée
+			compet.getParis().clear();
+		} else
+			// Cas ou au moins un joueur a fait un pari gagnant
+			for (Pari p : compet.getParis()) {
+				// Si le pari est gagnant (i.e le vainqueur envisagé est le vainqueur)
+				// on crédite le joueur concerné de (sa_mise * mise_totale_de_la_competition) /
+				// mise_totale_sur_le_vainqueur
+				if (p.getVainqueurEnvisage().getNom().equals(vainqueur)) {
+					crediterJoueur(p.getParieur().getNom(), p.getParieur().getPrenom(), p.getParieur().getPseudo(),
+							(p.getMise() * compet.getTotalMise()) / compet.getTotalMise(vainqueur),
+							passwordGestionnaire);
+				}
+				// On supprime le pari de la liste des paris du joueur courant
+				p.getParieur().getMesParis().remove(p);
+			}
+
+		// On regarde s'il ne reste plus de paris et on supprime la compétition.
+		if (compet.getTotalMise() == 0)
+			// On supprime la competition
+			listeCompetitions.remove(compet);
+	}
+
+	/**
+	 * créditer le compte en jetons d'un joueur du site de paris.
+	 * 
+	 * @param nom                  le nom du joueur
+	 * @param prenom               le prÃ©nom du joueur
+	 * @param pseudo               le pseudo du joueur
+	 * @param sommeEnJetons        la somme en jetons Ã  crÃ©diter
+	 * @param passwordGestionnaire le password du gestionnaire du site
+	 * 
+	 * @throws MetierException           levee si le
+	 *                                   <code>passwordGestionnaire</code> est
+	 *                                   invalide, si le
+	 *                                   <code>passwordGestionnaire</code> est
+	 *                                   incorrect, si la somme en jetons est
+	 *                                   négative.
+	 * @throws JoueurException           levee si <code>nom</code>,
+	 *                                   <code>prenom</code>, <code>pseudo</code>
+	 *                                   sont invalides.
+	 * @throws JoueurInexistantException levee si il n'y a pas de joueur avec les
+	 *                                   memes nom, prenom et pseudo.
+	 */
+	public void crediterJoueur(String nom, String prenom, String pseudo, long sommeEnJetons,
+			String passwordGestionnaire) throws MetierException, JoueurException, JoueurInexistantException {
+
+		// EXCEPTIONS METIER
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+		sommeEnJetonsNegatif(sommeEnJetons);
+
+		// EXCEPTIONS JOUEUR
+		validitePseudo(pseudo);
+		validiteNomPrenom(nom);
+		validiteNomPrenom(prenom);
+		JoueurInexistant(nom, prenom, pseudo);
+
+		// OPERATION
+		Joueur j = rechercherJoueur(nom, prenom, pseudo);
+		j.setJetons(j.getJetons() + sommeEnJetons);
+
+	}
+
+	/**
+	 * dÃ©biter le compte en jetons d'un joueur du site de paris.
+	 * 
+	 * @param nom                  le nom du joueur
+	 * @param prenom               le prÃ©nom du joueur
+	 * @param pseudo               le pseudo du joueur
+	 * @param sommeEnJetons        la somme en jetons Ã  dÃ©biter
+	 * @param passwordGestionnaire le password du gestionnaire du site
+	 * 
+	 * @throws MetierException           levee si le
+	 *                                   <code>passwordGestionnaire</code> est
+	 *                                   invalide, si le
+	 *                                   <code>passwordGestionnaire</code> est
+	 *                                   incorrect, si la somme en jetons est
+	 *                                   negative.
+	 * @throws JoueurException           levee si <code>nom</code>,
+	 *                                   <code>prenom</code>, <code>pseudo</code>
+	 *                                   sont invalides si le compte en jetons du
+	 *                                   joueur est insuffisant (il deviendrait
+	 *                                   negatif).
+	 * @throws JoueurInexistantException levee si il n'y a pas de joueur avec les
+	 *                                   memes nom, prenom et pseudo.
+	 * 
+	 */
+
+	public void debiterJoueur(String nom, String prenom, String pseudo, long sommeEnJetons, String passwordGestionnaire)
+			throws MetierException, JoueurInexistantException, JoueurException {
+
+		// EXCEPTIONS METIER
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+		sommeEnJetonsNegatif(sommeEnJetons);
+
+		// EXCEPTIONS JOUEUR
+		validitePseudo(pseudo);
+		validiteNomPrenom(nom);
+		validiteNomPrenom(prenom);
+		JoueurInexistant(nom, prenom, pseudo);
+
+		// On verifie que le nombre de jetons est suffisant
+		Joueur j = rechercherJoueur(nom, prenom, pseudo);
+		if (j.getJetons() < sommeEnJetons)
+			throw new JoueurException("Solde insuffisant");
+
+		// Operation
+		j.setJetons(j.getJetons() - sommeEnJetons);
+	}
+
+	/**
+	 * consulter les joueurs.
+	 * 
+	 * @param passwordGestionnaire le password du gestionnaire du site de paris
+	 * @throws MetierException levee si le <code>passwordGestionnaire</code> est
+	 *                         invalide, si le <code>passwordGestionnaire</code> est
+	 *                         incorrect.
+	 * 
+	 * @return une liste de liste dont les éléments (de type <code>String</code>)
+	 *         representent un joueur avec dans l'ordre :
+	 *         <ul>
+	 *         <li>le nom du joueur</li>
+	 *         <li>le prenom du joueur</li>
+	 *         <li>le pseudo du joueur</li>
+	 *         <li>son compte en jetons restant disponibles</li>
+	 *         <li>le total de jetons engages dans ses mises en cours.</li>
+	 *         </ul>
+	 */
+	public LinkedList<LinkedList<String>> consulterJoueurs(String passwordGestionnaire) throws MetierException {
+
+		// verification du password gestionnaire
+		validitePasswordGestionnaire(passwordGestionnaire);
+		conformitePasswordGestionnaire(passwordGestionnaire);
+
+		// Variable pour la récuperation de la liste des joueurs
+		LinkedList<LinkedList<String>> listeJoueur = new LinkedList<LinkedList<String>>();
+
+		for (Joueur j : listeJoueursInscrits) {
+			// Variable qui contiendra la liste des infos des joueurs
+			LinkedList<String> infoJoueur = new LinkedList<>();
+
+			infoJoueur.add(j.getNom());
+			infoJoueur.add(j.getPrenom());
+			infoJoueur.add(j.getPseudo());
+			infoJoueur.add(String.valueOf(j.getJetons()));
+			infoJoueur.add(String.valueOf(j.getTotalMise()));
+
+			// Ajout des infos dans la liste à renvoyer
+			listeJoueur.add(infoJoueur);
+		}
+
+		return listeJoueur;
+	}
+
+	// METHODES AVEC MOT DE PASSE DU JOUEUR
+
+	/**
+	 * miserVainqueur (parier sur une compÃ©tition, en dÃ©signant un vainqueur). Le
+	 * compte du joueur est dÃ©bitÃ© du nombre de jetons misÃ©s.
+	 * 
+	 * @param pseudo            le pseudo du joueur
+	 * @param passwordJoueur    le password du joueur
+	 * @param miseEnJetons      la somme en jetons Ã  miser
+	 * @param competition       le nom de la compÃ©tition relative au pari effectuÃ©
+	 * @param vainqueurEnvisage le nom du compÃ©titeur sur lequel le joueur mise
+	 *                          comme Ã©tant le vainqueur de la compÃ©tition
+	 * 
+	 * @throws MetierException                 levÃ©e si la somme en jetons est
+	 *                                         nÃ©gative.
+	 * @throws JoueurInexistantException       levÃ©e si il n'y a pas de joueur avec
+	 *                                         les mÃªmes pseudos et password.
+	 * @throws CompetitionInexistanteException levÃ©e si il n'existe pas de
+	 *                                         compÃ©tition de mÃªme nom.
+	 * @throws CompetitionException            levÃ©e si <code>competition</code> ou
+	 *                                         <code>vainqueurEnvisage</code> sont
+	 *                                         invalides, si il n'existe pas un
+	 *                                         compÃ©titeur de nom
+	 *                                         <code>vainqueurEnvisage</code> dans
+	 *                                         la compÃ©tition, si la compÃ©tition
+	 *                                         n'est plus ouverte (la date de
+	 *                                         clÃ´ture est dans le passÃ©).
+	 * @throws JoueurException                 levÃ©e si <code>pseudo</code> ou
+	 *                                         <code>password</code> sont invalides,
+	 *                                         si le <code>compteEnJetons</code> du
+	 *                                         joueur est insuffisant (il
+	 *                                         deviendrait nÃ©gatif).
+	 */
+	public void miserVainqueur(String pseudo, String passwordJoueur, long miseEnJetons, String competition,
+			String vainqueurEnvisage) throws MetierException, JoueurInexistantException,
+			CompetitionInexistanteException, CompetitionException, JoueurException {
+
+		// EXCEPTIONS METIER
+		sommeEnJetonsNegatif(miseEnJetons);
+
+		// EXCEPTION JOUEUR
+		validitePseudo(pseudo);
+		validitePasswordJoueur(passwordJoueur);
+		// On verifie que le Joueur existe vraiment
+		Joueur parieur = rechercherJoueur(pseudo, passwordJoueur);
+		if (parieur == null)
+			throw new JoueurInexistantException();
+		else if (parieur.getJetons() < miseEnJetons)
+			throw new JoueurException();
+
+		// EXCEPTION COMPETITIONS
+		validiteNomCompetOuJoueur(competition);
+		validiteNomCompetOuJoueur(vainqueurEnvisage);
+		competitionInexistante(competition);
+
+		Competition compet = rechercherCompetition(competition);
+		validiteDateCompetition(compet.getDate());
+
+		// On vérifie que le vainqueur existe bien dans la compétition
+		if (!compet.existeDansCompetition(vainqueurEnvisage))
+			throw new CompetitionException("le vainqueur est inconnu");
+
+		// On débite le joueur du montant misé
+		Competiteur vainqueurEnv = new Competiteur(vainqueurEnvisage);
+		debiterJoueur(parieur.getNom(), parieur.getPrenom(), parieur.getPseudo(), miseEnJetons, passwordGestionnaire);
+
+		// on crée le pari et on l'ajoute a la liste des paris du joueur et de la
+		// compétition
+		Pari p = new Pari(parieur, compet, vainqueurEnv, miseEnJetons);
+		compet.getParis().add(p);
+		parieur.getMesParis().add(p);
+	}
+
+	// METHODES SANS PASSWORD
+
+	/**
+	 * connaitre les compétitions en cours.
+	 * 
+	 * @return une liste de liste dont les éléments (de type <code>String</code>)
+	 *         représentent une compétition avec dans l'ordre :
+	 *         <ul>
+	 *         <li>le nom de la compÃ©tition,</li>
+	 *         <li>la date de cloture de la compÃ©tition.</li>
+	 *         </ul>
+	 */
+	public LinkedList<LinkedList<String>> consulterCompetitions() {
+
+		// Recuperation de la liste des competitions en cours
+		LinkedList<LinkedList<String>> listeCompet = new LinkedList<LinkedList<String>>();
+		LinkedList<String> infoCompet;
+
+		// On parcourt la liste des competitions pour en prendre les infos
+		for (Competition c : listeCompetitions) {
+			// liste qui servira de tampon
+			infoCompet = new LinkedList<>();
+
+			infoCompet.add(c.getNom());
+			infoCompet.add(c.getDate().toString());
+
+			// Ajout des infos dans la liste à afficher
+			listeCompet.add(infoCompet);
+		}
+		return listeCompet;
+	}
+
+	/**
+	 * connaÃ®tre la liste des noms des compÃ©titeurs d'une compÃ©tition.
+	 * 
+	 * @param competition le nom de la compÃ©tition
+	 * 
+	 * @throws CompetitionException            levÃ©e si le nom de la compÃ©tition
+	 *                                         est invalide.
+	 * @throws CompetitionInexistanteException levÃ©e si il n'existe pas de
+	 *                                         compÃ©tition de mÃªme nom.
+	 * 
+	 * @return la liste des compÃ©titeurs de la compÃ©tition.
+	 */
+	public LinkedList<String> consulterCompetiteurs(String competition)
+			throws CompetitionException, CompetitionInexistanteException {
+
+		// verification nom de competition valide
+		validiteNomCompetOuJoueur(competition);
+
+		// verification que la compet n'existe pas de nom
+		competitionInexistante(competition);
+
+		Competition c = rechercherCompetition(competition);
+		LinkedList<String> infoCompet = new LinkedList<>();
+		for (Competiteur cmp : c.getCompetiteurs())
+			infoCompet.add(cmp.getNom());
+
+		return infoCompet;
+	}
+
+	// METHODES DE RECHERCHE
+
+	/**
+	 * Rechercher un Joueur.
+	 * 
+	 * @param nom    le nom du joueur
+	 * @param prenom le prÃ©nom du joueur
+	 * @param pseudo le pseudo du joueur
+	 * 
+	 * 
+	 * @return le joueur s'il a été trouvé null sinon.
+	 * 
+	 */
+	public Joueur rechercherJoueur(String nom, String prenom, String pseudo) {
+		// parcours de liste a la recherche du joueur
+		for (Joueur j : listeJoueursInscrits)
+			if (nom.equals(j.getNom()) && prenom.equals(j.getPrenom()) && pseudo.equals(j.getPseudo()))
+				return j;
+		return null;
+	}
+
+	/**
+	 * Rechercher un Joueur.
+	 * 
+	 * @param pseudo   le pseudo du joueur
+	 * @param password le mot de passe du joueur
+	 * 
+	 * 
+	 * @return le joueur s'il a été trouvé null sinon.
+	 * 
+	 */
+	public Joueur rechercherJoueur(String pseudo, String passwordJoueur) {
+
+		for (Joueur j : listeJoueursInscrits)
+			if (j.getPseudo().equals(pseudo) && j.getPasswordJoueur().equals(passwordJoueur))
+				return j;
+		return null;
+	}
+
+	/**
+	 * Rechercher une compétition.
+	 * 
+	 * @param nom le nom de la compétition
+	 * 
+	 * @return la compétition si trouvée et null sinon.
+	 * 
+	 */
+	public Competition rechercherCompetition(String nom) {
+		// parcours de liste a la recherche de la compétition
+		for (Competition c : listeCompetitions) {
+			if (nom.equals(c.getNom()))
+				return c;
+		}
+		return null;
+	}
+
+	// METHODES DE CONTROLE
+
+	/**
+	 * verifier la validitÃ© du password du gestionnaire.
+	 * 
+	 * @param passwordGestionnaire le password du gestionnaire Ã  verifier
+	 * 
+	 * @throws MetierException levÃ©e si le <code>passwordGestionnaire</code> est
+	 *                         invalide.
+	 */
+	protected void validitePasswordGestionnaire(String passwordGestionnaire) throws MetierException {
+
+		if (passwordGestionnaire == null)
+			throw new MetierException();
+
+		// on verifie le password par l'expression régulière qui doit comporter au moins
+		// 8 chiffres ou lettres majuscules ou minuscule
+		if (!passwordGestionnaire.matches("[0-9A-Za-z]{8,}"))
+			throw new MetierException();
+	}
+
+	protected void validitePasswordJoueur(String pj) throws JoueurException {
+		if (pj == null)
+			throw new JoueurException();
+		if (!pj.matches("[0-9A-Za-z]{8,}"))
+			throw new JoueurException();
+	}
+
+	// fonction de validation de la somme en jetons
+	protected void sommeEnJetonsNegatif(long somme) throws MetierException {
+		if (somme < 0)
+			throw new MetierException();
+	}
+
+	// fonction de validations de parametres de fonctions
+	protected void validitePseudo(String mot) throws JoueurException {
+		if (mot == null)
+			throw new JoueurException();
+		if (!mot.matches("[0-9A-Za-z]{4,}"))
+			throw new JoueurException();
+
+	}
+
+	protected void validiteNomPrenom(String mot) throws JoueurException {
+		if (mot == null)
+			throw new JoueurException();
+		if (!mot.matches("[A-Za-z-]{1,}"))
+			throw new JoueurException();
+
+	}
+
+	protected void conformitePasswordGestionnaire(String passwordGestionnaire) throws MetierException {
+
+		if (!passwordGestionnaire.equals(this.passwordGestionnaire)) { // password correct
+			throw new MetierException();
+		}
+	}
+
+	protected void validiteNomCompetOuJoueur(String mot) throws CompetitionException {
+		if (mot == null)
+			throw new CompetitionException();
+		if (!mot.matches("[0-9A-Za-z]{4,}"))
+			throw new CompetitionException();
+	}
+
+	protected void validiteDateCompetition(DateFrancaise dateCloture) throws CompetitionException {
+		if (dateCloture == null)
+			throw new CompetitionException("date non instanciee");
+		if (dateCloture.estDansLePasse())
+			throw new CompetitionException("date depasée");
+	}
+
+	protected void validiteListeCompetiteur(String[] liste) throws CompetitionException, MetierException {
+		if (liste == null)
+			throw new MetierException("liste competiteurs non instancié");
+		if (liste.length < 2)
+			throw new CompetitionException("nombre de competiteurs insuffisant");
+
+	}
+
+	/**
+	 * Méthode vérifiant qu'une compétition existe deja
+	 * 
+	 * @param nom le nom de la compétition
+	 * 
+	 *            throws CompetitionInexistanteException si la competition n'existe
+	 *            pas
+	 * 
+	 */
+	public void competitionExistante(String nomCompetition) throws CompetitionExistanteException {
+		// Exeption competition Existante
+		if (rechercherCompetition(nomCompetition) != null)
+			throw new CompetitionExistanteException();
+	}
+
+	/**
+	 * Méthode vérifiant qu'une compétition n'existe pas
+	 * 
+	 * @param nom le nom de la compétition
+	 * 
+	 *            throws CompetitionInexistanteException si la competition n'existe
+	 *            pas
+	 * 
+	 */
+	public void competitionInexistante(String nomCompetition) throws CompetitionInexistanteException {
+		// Exeption competition Existante
+		if (rechercherCompetition(nomCompetition) == null)
+			throw new CompetitionInexistanteException();
+	}
+
+	/**
+	 * Méthode vérifiant qu'un joueur n'existe pas 
+	 * 
+	 * @param nom    le nom du joueur
+	 * 
+	 * @param prenom le prenom du joueur
+	 * 
+	 * @param pseudo le pseudo du joueur
+	 * 
+	 *               throws JoueurInexistantException si le joueur n'existe pas
+	 * 
+	 */
+	public void JoueurInexistant(String nom, String prenom, String pseudo) throws JoueurInexistantException {
+		// Exeption competition Existante
+		if (rechercherJoueur(nom, prenom, pseudo) == null) {
+			throw new JoueurInexistantException();
+		}
+
+	}
+
+	/**
+	 * Méthode vérifiant la validité d'une compétition par les paramètres suivants :
+	 * 
+	 * @param nomCompetition le nom de la competition dont on verifie la validité
+	 * 
+	 * @param String[]       liste la liste des competiteurs de la competition
+	 * 
+	 * @param dateCloture    la date de Cloture de la compétition
+	 * 
+	 *                       throws CompetitionException levée dans le cas où le
+	 *                       competiteur n'existe pas dans le tableau
+	 * 
+	 */
+	public void validiteCompetition(String nomCompetition, String[] liste, DateFrancaise dateCloture)
+			throws CompetitionException, MetierException {
+		validiteNomCompetOuJoueur(nomCompetition);
+		validiteDateCompetition(dateCloture);
+		validiteListeCompetiteur(liste);
+	}
+
+	/**
+	 * Méthode vérifiant qu'un compétiteur existe dans un tableau contenant des noms
+	 * de competiteurs
+	 * 
+	 * @param nomCompetiteur   le nom du competiteur dont on verifie l'existence
+	 * 
+	 * @param debut            l'indice à partir duquel on fait la recherche
+	 * 
+	 * @param listCompetiteurs le tableau contenant le nom des compétiteurs
+	 * 
+	 *                         throws CompetitionException levée dans le cas où le
+	 *                         competiteur n'existe pas dans le tableau
+	 * 
+	 */
+	public void competiteurExistant(String nomCompetiteur, int debut, String[] listCompetiteurs)
+			throws CompetitionException {
+		for (int i = debut; i < listCompetiteurs.length; i++) {
+			if (nomCompetiteur.equals(listCompetiteurs[i]))
+				throw new CompetitionException("competiteur " + nomCompetiteur + " en doublure");
+		}
+	}
+
+	/**
+	 * Générateur de password de taille 8 et plus
+	 * 
+	 * @param taille la taille du password Les caractères sont des chiffres, lettres
+	 *               minuscules et majuscules
+	 * 
+	 */
+	public String genererPassword(int taille) {
+
+		if (taille < 8) // La taille du mdp doit être plus de 8
+			return null;
+
+		String mdp = "";
+		String mdp1 = "";
+		// Génération aléatoire d'une chaine de taille lettres majuscule
+		mdp1 = new Random().ints(taille - 4, 65, 90).mapToObj(i -> String.valueOf((char) i))
+				.collect(Collectors.joining());
+
+		// Génération aléatoire d'une chaine de taille lettres minuscules
+		mdp = new Random().ints(taille - 3, 97, 122).mapToObj(i -> String.valueOf((char) i))
+				.collect(Collectors.joining());
+
+		// Génération aléatoire d'une chaine de taille chiffres
+		mdp += new Random().ints(taille - 5, 48, 57).mapToObj(i -> String.valueOf((char) i))
+				.collect(Collectors.joining());
+
+		return fusion(mdp, mdp1);
+	}
+
+	/**
+	 * Fonctionner pour fusionner deux chaines de caractères
+	 * 
+	 * @param s1 et s2 les deux chaines de caractères à fusionner
+	 * 
+	 */
+	public static String fusion(String s1, String s2) {
+		StringBuilder finalString = new StringBuilder();
+
+		// mettre les caractères des deux strings de base dans le string final
+		int i = 0, j = 0;
+		while (i < s1.length() && j < s2.length()) {
+
+			finalString.append(s1.charAt(i++));
+			finalString.append(s2.charAt(j++));
+		}
+
+		/*
+		 * Voir si les deux strings ont été parcourus et le faire sinon mettre ce qui
+		 * reste dans le string final
+		 */
+		if (i != s1.length()) {
+			finalString.append(s1.substring(i));
+		}
+		if (j != s2.length()) {
+			finalString.append(s2.substring(j));
+		}
+		return finalString.toString();
+	}
+
+}

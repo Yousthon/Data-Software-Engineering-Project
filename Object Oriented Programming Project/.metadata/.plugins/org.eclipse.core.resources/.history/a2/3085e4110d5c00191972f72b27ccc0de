@@ -1,0 +1,187 @@
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+public class Joueur {
+
+	/**
+	 * le nom du joueur
+	 */
+	private String nom;
+
+	/**
+	 * le prenom du joueur
+	 */
+	private String prenom;
+
+	/**
+	 * le pseudo du joueur
+	 */
+	private String pseudo;
+
+	/**
+	 * le mot de passe du joueur
+	 */
+	private String passwordJoueur;
+
+	/**
+	 * Le nombre de jetons du joueur
+	 */
+	private long jetons;
+
+	/**
+	 * la liste des paris du joueur
+	 */
+	private LinkedList<Pari> mesParis;
+
+	// GETTERS ET SETTERS
+	/**
+	 * Getter de l'attribut nom
+	 * 
+	 * @return Retourne le nom du joueur
+	 **/
+	public String getNom() {
+		return nom;
+	}
+
+	/**
+	 * Setter de l'attribut nom
+	 * 
+	 * @param nom
+	 */
+	public void setNom(String nom) {
+		this.nom = nom;
+	}
+
+	/**
+	 * Getter de l'attribut prenom
+	 * 
+	 * @return Retourne le prenom du joueur
+	 */
+	public String getPrenom() {
+		return prenom;
+	}
+
+	/**
+	 * Setter de l'attribut prenom
+	 * 
+	 * @param prenom
+	 */
+	public void setPrenom(String prenom) {
+		this.prenom = prenom;
+	}
+
+	/**
+	 * Getter de l'attribut pseudo
+	 * 
+	 * @return Retourne le pseudo du joueur
+	 */
+	public String getPseudo() {
+		return pseudo;
+	}
+
+	/**
+	 * Setter de l'attribut pseudo
+	 * 
+	 * @param pseudo Le pseudo du joueur
+	 */
+	public void setPseudo(String pseudo) {
+		this.pseudo = pseudo;
+	}
+
+	/**
+	 * Getter de l'attribut passwordJoueur
+	 * 
+	 * @return Retourne le passwordJoueur.
+	 */
+	public String getPasswordJoueur() {
+		return passwordJoueur;
+	}
+
+	/**
+	 * Setter de l'attribut passwordJoueur
+	 * 
+	 * @param passwordJoueur
+	 */
+	public void setPasswordJoueur(String passwordJoueur) {
+		this.passwordJoueur = passwordJoueur;
+	}
+
+	/**
+	 * Getter de l'attribut jetons
+	 * 
+	 * @return Retourne le nombre de jetons disponible pour le joueurs
+	 */
+	public long getJetons() {
+		return this.jetons;
+	}
+
+	/**
+	 * Setter de l'attribut jetons
+	 * @param jetons
+	 */
+	public void setJetons(long jetons) {
+		this.jetons = jetons;
+	}
+
+	/**
+	 * Getter de l'attribut mesParis
+	 * @return Retourne la liste des paris du joueur
+	 **/
+	public LinkedList<Pari> getMesParis() {
+		return mesParis;
+	}
+
+	/**
+	 * Setter de l'attribut mesParis
+	 * @param mesParis (liste des Paris du joueur)
+	 */
+	public void setMesParis(LinkedList<Pari> mesParis) {
+		this.mesParis = mesParis;
+	}
+
+	
+	// CONSTRUCTEURS
+
+	/**
+	 * Constructeur avec paramètres
+	 */
+	public Joueur(String nom, String prenom, String pseudo, String passwordJoueur) {
+		setNom(nom);
+		setPrenom(prenom);
+		setPseudo(pseudo);
+		setPasswordJoueur(passwordJoueur);
+		setJetons(0); 
+		mesParis = new LinkedList<Pari>();
+	}
+
+	// METHODE EQUALS
+
+	public boolean equals(Object o) {
+		if (o instanceof Joueur) {
+			Joueur j = (Joueur) o;
+			return ((j.nom.equals(this.nom) && j.prenom.equals(this.prenom)) 
+					|| j.pseudo.equals(this.pseudo));
+		}
+		return false;
+	}
+	
+	/**
+	 * methode calculant la mise totale du joueur 
+	 * 
+	 * @param 
+	 */
+	public long getTotalMise() {
+
+		if (getMesParis() == null)
+			return 0;
+
+		long miseTotale = 0;
+
+		for (Pari p : getMesParis())
+			miseTotale += p.getMise();
+		return miseTotale;
+	}
+
+	
+}
